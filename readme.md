@@ -669,7 +669,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 <img width="961" alt="PolicyUpdate" src="https://user-images.githubusercontent.com/46476206/147037523-24482573-4cd2-405e-8eff-601c4caa4cf9.png">
 
 
-*การทำงานของ Code*
+👨🏻‍💻 **การทำงานของ Code**
 
 🔑 **DownloadPolicyUpdate**
 ``` c#
@@ -686,6 +686,7 @@ public IHttpActionResult DownloadPolicyUpdate(DownloadFileInfo downloadFileInfo)
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
+        💡 //
         var result = action.DownloadPolicyUpdateFile(user, downloadFileInfo.ContentId);
         return Ok(result);
     }
@@ -738,6 +739,7 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
+        💡 //
         var result = action.DownloadPolicyCancelFile(user, downloadFileInfo.ContentId);
         return Ok(result);
     }
@@ -778,6 +780,7 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
     {
         DateTime now = GetCurrentDbDataTime();
 
+        💡//
         var saleContent = context.IDL_SALE_CONTENT
             .Where(x => x.CONTENT_ID == contentID)
             .FirstOrDefault();
@@ -820,7 +823,7 @@ public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
     ITeleRepository repository = new TeleRepository();
     var result =  repository.DownloadPolicyUpdateFile(user, contentID);
 
-    // send mail
+    💡 // send mail
     DateTime now = repository.GetCurrentDateTime();
     var variables = new Dictionary<string, string>() {
         { "Function", "Donwload Policy Update File" },
@@ -876,6 +879,7 @@ public IHttpActionResult DownloadPaymentConfirmation(DownloadFileInfo downloadFi
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
+        //💡
         var result = action.DownloadPaymentConfirmationFile(user, downloadFileInfo.ContentId);                
         return Ok(result);
     }
@@ -912,7 +916,7 @@ public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
     ITeleRepository repository = new TeleRepository();
     var result =  repository.DownloadPaymentConfirmationFile(user, contentID);
 
-    // send mail
+    💡 // send mail
     DateTime now = repository.GetCurrentDateTime();
     var variables = new Dictionary<string, string>() {
         { "Function", "Download Payment Confirmation File" },
@@ -946,6 +950,7 @@ public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
 }
 ```
 **DownloadPaymentConfirmationFile**
+
 ```c#
  public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
 {
@@ -954,6 +959,7 @@ public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
     {
         DateTime now = GetCurrentDbDataTime();
 
+        💡
         var saleContent = context.IDL_SALE_CONTENT
             .Where(x => x.CONTENT_ID == contentID)
             .FirstOrDefault();
@@ -1012,6 +1018,7 @@ public IHttpActionResult DownloadPaycodeFollowUp(PaycodeFollowupParam paycodeFol
             throw new UnauthorizedAccessException("Invalid Company");
         }
         IFollowUpAction action = new FollowUpAction();
+        💡 //
         var results = action.CreatedNewPaycodeFollowUp(user, paycodeFollowDate);
         if(results == null)
         {
@@ -1061,12 +1068,12 @@ public FileInfo CreatedNewPaycodeFollowUp(UserInfo userInfo, PaycodeFollowupPara
     string partyCode = userInfo.Company;
     IFollowUpRepository repository = new FollowUpRepository();
 
-    //โหลดรายการที่ต้องติดตามเบี้ย
+    💡//โหลดรายการที่ต้องติดตามเบี้ย
     var listPremFollowUp = repository.LoadCSOPremFollwUp(followUpDate.BeginDate, followUpDate.EndDate, partyCode);
     if (listPremFollowUp.Count > 0)
     {
         List<string> policyNbrs = listPremFollowUp.Select(s => s.POLICY_NUMBER).Distinct().ToList();
-        //หาข้อมูลกรมธรรม์
+        💡 //หาข้อมูลกรมธรรม์
         List<TRNPCsRnDue> CsoNextDueTxns = repository.GetCsoNextDue(policyNbrs);
 
         List<TRNPFollowUpLayout> trnpFollowUp = new List<TRNPFollowUpLayout>();
@@ -1191,6 +1198,7 @@ public IHttpActionResult DownloadPaycodeReply(DownloadFileInfo downloadFileInfo)
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
+        💡 //
         var result = action.DownloadPaycodeReplyFile(user, downloadFileInfo.ContentId);
         return Ok(result);
     }
@@ -1229,7 +1237,7 @@ public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
     ITeleRepository repository = new TeleRepository();
     var result =  repository.DownloadPaycodeReplyFile(user, contentID);
 
-    // send mail
+    💡 // send mail
     DateTime now = repository.GetCurrentDateTime();
     var variables = new Dictionary<string, string>() {
         { "Function", "Download Paycode Reply File" },
@@ -1272,7 +1280,7 @@ public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
     using (TeleEntities context = new TeleEntities())
     {
         DateTime now = GetCurrentDbDataTime();
-
+        💡
         var saleContent = context.IDL_SALE_CONTENT
             .Where(x => x.CONTENT_ID == contentID)
             .FirstOrDefault();
@@ -1315,6 +1323,7 @@ public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
 👨🏻‍💻 **การทำงานของ Code**
 
 🔑 **DownloadRecurringFollowUp**
+
 ``` c#
 [HttpPost]
 [Route("DownloadRecurringFollowUp")]
@@ -1346,7 +1355,7 @@ public IHttpActionResult DownloadRecurringFollowUp()
             result.Filename = resultFile.FileName;
             result.Content = resultFile.Content;
 
-            /// TODO : Send Mail  FollowUp Recurring
+            💡 /// TODO : Send Mail  FollowUp Recurring
             /// // resultFile.ItemCount
             IFollowUpAction action = new FollowUpAction();
             action.SendMail(partyCode, resultFile.ItemCount, "Download Recurring FollowUp File");
@@ -1388,6 +1397,7 @@ public IHttpActionResult DownloadRecurringFollowUp()
 👨🏻‍💻 **การทำงานของ Code**
 
 🔑 **DownloadSaleLead**
+
 ``` c#
 [HttpPost]
 [Route("DownloadSaleLead")]
@@ -1402,6 +1412,8 @@ public IHttpActionResult DownloadSaleLead(DownloadFileInfo downloadFileInfo)
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
+
+        //💡
         var result = action.DownloadSaleLeadFile(user, downloadFileInfo.ContentId);
         return Ok(result);
     }
@@ -1439,7 +1451,7 @@ public IHttpActionResult DownloadSaleLead(DownloadFileInfo downloadFileInfo)
 {
     ITeleRepository repository = new TeleRepository();
     var result = repository.DownloadSaleLeadFile(user, contentID);
-    // send mail
+    💡 // send mail
     DateTime now = repository.GetCurrentDateTime();
     var variables = new Dictionary<string, string>() {
         { "Function", "Donwload Sale Lead File" },
