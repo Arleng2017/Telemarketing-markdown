@@ -170,6 +170,8 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         };
 
         ITeleServiceAction action = new TeleServiceAction();
+
+        //step 1. Upload รายการที่ลูกค้าก่อนยกเลิก
         action.UploadCancelCase(param);
         return Ok();
     }
@@ -199,11 +201,143 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     }
 }
 ```
+```c#
+   public void UploadCancelCase(ObjectParam param)
+{
+    DelimitedFileEngine engine = new DelimitedFileEngine(typeof(CancelCaseLayout));
+    ITeleRepository repository = new TeleRepository();
+    IEnumerable<CancelCaseLayout> items = null;
+
+    string strContentFile = Encoding.GetEncoding(874).GetString(param.File.Content);
+    try
+    {
+        items = engine.ReadString(strContentFile) as IEnumerable<CancelCaseLayout>;
+    }
+    catch (Exception ex)
+    {
+        string e = ex.Message;
+        if (ex.InnerException != null)
+        {
+            e = e + " ==> " + ex.InnerException.Message;
+            if (ex.InnerException.InnerException != null)
+            {
+                e = e + " ==> " + ex.InnerException.InnerException.Message;
+            }
+        }
+        throw new ApplicationException("ไฟล์ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบไฟล์ : " + e);
+    }
+
+    #region save data to database & call policy service
+    string cancelCaseId = repository.GetNewID();
+    string contentId = repository.GetNewID();
+    DateTime now = repository.GetCurrentDateTime();
+    string username = param.User.Username;
+    string partyCode = param.User.Company;
+
+    // สร้าง Object เพื่อมา Assign ค่า
+    IDL_SALE_CONTENT content = new IDL_SALE_CONTENT();
+    content.CONTENT_ID = contentId;
+    content.FILE_NAME = param.File.Filename;
+    content.CONTENT = param.File.Content;
+    content.CONTENT_FILE_TYPE = ContentFileType.CancelCase;
+    content.TELE_SALE_CONTENT_OWNER = new TELE_SALE_CONTENT_OWNER();
+    content.TELE_SALE_CONTENT_OWNER.TRD_PARTY_ID = repository.GetPartyID(partyCode);
+    content.TELE_SALE_CONTENT_OWNER.CREATED_ON = now;
+
+    IDL_CANCEL_CASE cancelCase = new IDL_CANCEL_CASE();
+    cancelCase.CANCEL_CASE_ID = cancelCaseId;
+    cancelCase.CONTENT_ID = contentId;
+    cancelCase.CREATED_ON = now;
+    cancelCase.CREATED_BY = username;
+
+    using (I_DirectSvcClient client = new I_DirectSvcClient())
+    {
+        int seqNumber = 0;
+        foreach (var item in items)
+        {
+            seqNumber++;
+
+            IDL_CANCEL_CASE_ITEM cancelItem = new IDL_CANCEL_CASE_ITEM();
+            cancelItem.SALE_ITEM_ID = repository.GetSaleItemIDFromRefNo(item.ReferenceNumber);
+            cancelItem.CANCEL_CASE_ID = cancelCaseId;
+            cancelItem.SEQ_NUMBER = seqNumber;
+            cancelItem.CANCEL_CASE_DATE = DateTime.ParseExact(item.CancelCaseDate, "yyyyMMdd", CultureInfo.InvariantCulture);
+            cancelItem.CANCEL_TRANSACTION_DATE = DateTime.ParseExact(item.CancelCaseTransactionDate, "yyyyMMdd", CultureInfo.InvariantCulture);
+            cancelCase.IDL_CANCEL_CASE_ITEM.Add(cancelItem);
+
+            //send cancel info to policy service
+            // ระบบส่งรายการที่มีการยกเลิก เข้าสู่ระบบ NewBis
+            var result =  client.RequestToCancelPolicy(item.PolicyNumber, DateTime.ParseExact(item.CancelCaseDate, "yyyyMMdd", CultureInfo.InvariantCulture));
+            if (!result.Successed)
+            {
+                throw new ApplicationException("ไม่สามารถส่งข้อมูลให้ Policy Service ได้ : "+result.ErrorMessage);
+            }
+        } 
+    }
+
+    content.IDL_CANCEL_CASE.Add(cancelCase);
+    //บันทึกข้อมูลรายการลง Database
+    repository.SavePolicyCancel(content);
+    #endregion
+    
+    // send mail
+    //ถ้าทำรายการก่อนหน้าเสร็จสิ้น ก็จะมาส่ง Email
+    var variables = new Dictionary<string, string>() {
+        { "Function", "Upload Cancel Case File" },
+        { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
+        { "TotalItem", string.Format("{0:N0}", items.Count()) }
+    };
+
+    string mailCode = string.Empty;
+    if (partyCode == PartyCode.IDBL)
+    {
+        mailCode = MailCode.TELE_IDBL;
+    }
+    else if (partyCode == PartyCode.TVD)
+    {
+        mailCode = MailCode.TELE_TVD;
+    }
+
+    EMailFromDb email = new EMailFromDb();
+    try
+    {
+        email.Send(mailCode, variables);
+    }
+    catch (Exception ex)
+    {
+        throw new ApplicationException("ไม่สามารถส่ง E-mail ได้ : " + ex.Message);
+    }
+}
+```
+
+```c# 
+ public void SavePolicyCancel(IDL_SALE_CONTENT saleContent)
+        {
+            using (TeleEntities context = new TeleEntities())
+            {
+                context.IDL_SALE_CONTENT.Add(saleContent);
+                try
+                {
+                    context.SaveChanges();
+                }
+                catch (DbEntityValidationException dbEx)
+                {
+                    var errorMessages = dbEx.EntityValidationErrors
+                        .SelectMany(x => x.ValidationErrors)
+                        .Select(x => x.ErrorMessage);
+
+                    var fullErrorMessage = string.Join("; ", errorMessages);
+                    var exceptionMessage = string.Concat(dbEx.Message, " The validation errors are: ", fullErrorMessage);
+                    throw new Exception("=== Error!!! Method Name : " + MethodBase.GetCurrentMethod().Name + " ===\n" + exceptionMessage);
+                }
+            }
+        }
+
+```
 ### 🎬 **Application Info** 
 🔎 เพื่อส่งข้อมูลคำขอเอาประกันภัย สำหรับรายการชำระผ่านช่องทาง Counter Service (7-11)
 
 <img width="956" alt="ApplicationInfo" src="https://user-images.githubusercontent.com/46476206/147037423-5bd37024-414e-4087-a8df-234014f68cc3.png">
-
 
 
 *การทำงานของ Code*
@@ -256,6 +390,208 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
                 return InternalServerError(ex);
             }
         }
+
+```
+```c#
+ public void UploadApplicationInfo(ObjectParam param)
+{
+    DelimitedFileEngine engine = new DelimitedFileEngine(typeof(ApplicationInfoLayout));
+    ITeleRepository repository = new TeleRepository();
+    DateTime now = repository.GetCurrentDateTime();
+    IEnumerable<ApplicationInfoLayout> items = null;
+
+    string strContentFile = Encoding.GetEncoding(874).GetString(param.File.Content);
+    try
+    {
+        items = engine.ReadString(strContentFile) as IEnumerable<ApplicationInfoLayout>;
+    }
+    catch (Exception ex)
+    {
+        string e = ex.Message;
+        if (ex.InnerException != null)
+        {
+            e = e + " ==> " + ex.InnerException.Message;
+            if (ex.InnerException.InnerException != null)
+            {
+                e = e + " ==> " + ex.InnerException.InnerException.Message;
+            }
+        }
+        throw new ApplicationException("ไฟล์ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบไฟล์ : " + e);
+    }
+    repository.UploadApplicationInfo(param, items);
+
+    #region Send SMS
+    List<string> messages = new List<string>();
+    List<IDL1_APP_INFO_SEND_SMS> appInfoSMSList = new List<IDL1_APP_INFO_SEND_SMS>();
+
+    var csoLinkIdlFypList = repository.GetAllItemToSendSMS();
+    foreach (var csoLinkIdlFyp in csoLinkIdlFypList)
+    {
+        IDL1_APP_INFO_SEND_SMS appInfoSMS = new IDL1_APP_INFO_SEND_SMS();
+        appInfoSMS.APP_INFO_ITEM_ID = csoLinkIdlFyp.APP_INFO_ITEM_ID;
+        appInfoSMS.MESSAGE = "ชำระค่าเบี้ยประกันที่ 7-11 paycode = " + csoLinkIdlFyp.CSO_PAY_ITEM.CS_PAY_CODE + " จำนวน " +
+            csoLinkIdlFyp.CSO_PAY_ITEM.AMOUNT.ToString("N") + " บาท สอบถามเพิ่มเติมโทร 02-777-8888 กรุงเทพประกันชีวิต";
+        appInfoSMS.MOBILE_TEL = csoLinkIdlFyp.IDL1_APP_INFO_ITEM.MOBILE_TEL1;
+        appInfoSMS.CREATED_ON = now;
+        appInfoSMSList.Add(appInfoSMS);
+
+        string msg = appInfoSMS.MOBILE_TEL + ",'" + appInfoSMS.MESSAGE + "'";
+        messages.Add(msg);
+    }
+    #endregion
+
+    #region เพิ่มการส่ง SMS ให้ผู้ดูแลระบบ
+    string sendMessage = "วันที่ " + now.ToString("dd/MM/yyyy HH:mm:ss") + " ทำการ Upload Application Info จำนวน " + messages.Count.ToString() + " รายการ";
+    var smsReceivers = ConfigurationManager.AppSettings["SMSReceivers"];
+    List<string> telNoList = new List<string>();
+    if (smsReceivers.Contains(","))
+    {
+        telNoList = smsReceivers.Split(',').ToList();
+    }
+    else
+    {
+        telNoList.Add(smsReceivers);
+    }
+    foreach (var telNo in telNoList)
+    {
+        messages.Add(telNo + ",'" + sendMessage + "'");
+    }
+    #endregion
+
+    // Send SMS
+    bool result = false;
+    result = CallServiceSendSMS(messages);
+    if (result)
+    {
+        repository.SaveAppInfoSendSMS(appInfoSMSList);
+
+        // send mail
+        var variables = new Dictionary<string, string>() {
+            { "Function", "Upload Application Info File" },
+            { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
+            { "TotalItem", string.Format("{0:N0}", items.Count()) }
+        };
+
+        string mailCode = string.Empty;
+        string partyCode = param.User.Company;
+        if (partyCode == PartyCode.IDBL)
+        {
+            mailCode = MailCode.TELE_IDBL;
+        }
+        else if (partyCode == PartyCode.TVD)
+        {
+            mailCode = MailCode.TELE_TVD;
+        }
+
+        EMailFromDb email = new EMailFromDb();
+        try
+        {
+            email.Send(mailCode, variables);
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException("ไม่สามารถส่ง E-mail ได้ : " + ex.Message);
+        }
+    }
+    else
+    {
+        throw new ApplicationException("ไม่สามารถส่ง SMS ให้ลูกค้าได้");
+    }
+}
+```
+```c# 
+ public void UploadApplicationInfo(ObjectParam param, IEnumerable<ApplicationInfoLayout> items)
+{
+    using (TeleEntities context = new TeleEntities())
+    {
+        #region  Insert data to IDL1_App_Info_Item
+        DateTime now = GetCurrentDbDataTime();
+        string contentId = GetNewDbID();
+        int seqNumber = 0;
+        string username = param.User.Username;
+        //string partyCode = GetPartyCode(param.User);
+        string partyCode = param.User.Company;
+        IDL_SALE_CONTENT content = new IDL_SALE_CONTENT();
+        content.CONTENT_ID = contentId;
+        content.FILE_NAME = param.File.Filename;
+        content.CONTENT = param.File.Content;
+        content.CONTENT_FILE_TYPE = ContentFileType.ApplicationInfo;
+        
+        //นำข้อมูลที่ได้มาวนลูป เพื่อ Save ลง Databse
+        foreach (var item in items)
+        {
+            seqNumber++;
+            string appInfoId = GetNewDbID();
+            string appInfoItemId = GetNewDbID();
+
+            IDL1_APP_INFO appInfo = new IDL1_APP_INFO();
+            appInfo.APP_INFO_ID = appInfoId;
+            appInfo.CONTENT_ID = contentId;
+            appInfo.APP_INFO_ITEM_ID = appInfoItemId;
+
+            appInfo.IDL1_APP_INFO_ITEM = new IDL1_APP_INFO_ITEM();
+            appInfo.IDL1_APP_INFO_ITEM.APP_INFO_ITEM_ID = appInfoItemId;
+            appInfo.IDL1_APP_INFO_ITEM.TRANSACTION_DATE = DataConverter.ConvertStringToDateTime(item.TransactionDate);
+            appInfo.IDL1_APP_INFO_ITEM.REF_NO = item.RefNo;
+            appInfo.IDL1_APP_INFO_ITEM.SEQ_NUMBER = seqNumber;
+            appInfo.IDL1_APP_INFO_ITEM.INSURED_TITLE = item.InsuredTitle;
+            appInfo.IDL1_APP_INFO_ITEM.INSURED_NAME = item.InsuredName;
+            appInfo.IDL1_APP_INFO_ITEM.INSURED_SURNAME = item.InsuredSurname;
+            appInfo.IDL1_APP_INFO_ITEM.ID_TYPE = item.IDType;
+            appInfo.IDL1_APP_INFO_ITEM.ID_CARD = item.IDCard;
+            appInfo.IDL1_APP_INFO_ITEM.MOBILE_TEL1 = item.MobileTel1;
+            appInfo.IDL1_APP_INFO_ITEM.CAMPAIGN_CODE = item.CampaignCode;
+            appInfo.IDL1_APP_INFO_ITEM.PRODUCT_CODE = item.ProductCode;
+            appInfo.IDL1_APP_INFO_ITEM.PRODUCT_SUBCODE = item.ProductSubCode;
+            appInfo.IDL1_APP_INFO_ITEM.PRODUCT_PLAN = item.ProductPlan;
+            appInfo.IDL1_APP_INFO_ITEM.BILL_MODE = item.BillMode;
+            appInfo.IDL1_APP_INFO_ITEM.TOTAL_SALE_PREMIUM = Convert.ToDecimal(item.TotalSalePremium);
+            appInfo.IDL1_APP_INFO_ITEM.CREATED_ON = now;
+            appInfo.IDL1_APP_INFO_ITEM.CREATED_BY = username;
+
+            // add 3rd party
+            appInfo.IDL1_APP_INFO_ITEM.IDL8_APP_INFO_ITEM_OWNER = new IDL8_APP_INFO_ITEM_OWNER();
+            appInfo.IDL1_APP_INFO_ITEM.IDL8_APP_INFO_ITEM_OWNER.APP_INFO_ITEM_ID = appInfoItemId;
+            appInfo.IDL1_APP_INFO_ITEM.IDL8_APP_INFO_ITEM_OWNER.TRD_PARTY_ID = GetPartyIdLocal(partyCode);
+            appInfo.IDL1_APP_INFO_ITEM.IDL8_APP_INFO_ITEM_OWNER.CREATED_ON = now;
+            
+            content.IDL1_APP_INFO.Add(appInfo);
+        }
+
+        context.IDL_SALE_CONTENT.Add(content);
+        try
+        {
+            context.SaveChanges();
+        }
+        catch (DbEntityValidationException dbEx)
+        {
+            var errorMessages = dbEx.EntityValidationErrors
+                .SelectMany(x => x.ValidationErrors)
+                .Select(x => x.ErrorMessage);
+
+            var fullErrorMessage = string.Join("; ", errorMessages);
+            var exceptionMessage = string.Concat(dbEx.Message, " The validation errors are: ", fullErrorMessage);
+            throw new Exception("=== Error!!! Method Name : " + MethodBase.GetCurrentMethod().Name + " Line: " + seqNumber + " ===\n" + exceptionMessage);
+        }
+        #endregion
+
+        // ทำการ Gen PayCode แล้วก็บันทึกข้อมูลเพื่อรอส่ง SMS
+        #region Call package for insert data into CSO_Pay_item and CSO_Link_IDL_FYP
+        string connectionString = ConfigurationManager.ConnectionStrings["isis_db"].ConnectionString;
+        using (OracleConnection con = new OracleConnection(connectionString))
+        {
+            con.Open();
+            string command = "cso_idl_fyp.gen_idl_fyp_pay_item";
+            OracleCommand cmd = new OracleCommand(command, con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.ExecuteNonQuery();
+        }
+        #endregion
+
+        // created paycode reply file
+        SavePaycodeReply(partyCode, username);
+    }
+}
 
 ```
 
