@@ -10,7 +10,7 @@ Gitlab Repo
 
 
 ---
-## ⚙️ **หลักการทำงานของโค้ด**
+## ⚙️ **หลักการทำงานของโค้ด** 
 
 ## 📌 **Upload**
 ---
@@ -168,7 +168,8 @@ public void UploadYesSale(ObjectParam param)
 
 <img width="959" alt="Cancel Case" src="https://user-images.githubusercontent.com/46476206/147037350-49db2bce-19c9-4aa5-a7f2-9769ba5b5151.png">
 
-*การทำงานของ Code*
+
+👨🏻‍💻 **การทำงานของ Code** 
 
 🔑 **UploadCancelCase**
 
@@ -380,7 +381,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 <img width="956" alt="ApplicationInfo" src="https://user-images.githubusercontent.com/46476206/147037423-5bd37024-414e-4087-a8df-234014f68cc3.png">
 
 
-*การทำงานของ Code*
+👨🏻‍💻 **การทำงานของ Code**
 
 🔑 **UploadApplicationInfo**
 
@@ -720,7 +721,7 @@ public IHttpActionResult DownloadPolicyUpdate(DownloadFileInfo downloadFileInfo)
 <img width="960" alt="Policy Cancel" src="https://user-images.githubusercontent.com/46476206/147037595-e8582ca2-c4c3-44be-9f1d-f6a094ea5306.png">
 
 
-*การทำงานของ Code*
+👨🏻‍💻 **การทำงานของ Code**
 
 🔑 **DownloadPolicyCancel**
 ``` c#
@@ -858,7 +859,7 @@ public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
 <img width="959" alt="Payment Confirimation" src="https://user-images.githubusercontent.com/46476206/147043060-36012a37-7f84-4f84-a192-e9fff09513eb.png">
 
 
-*การทำงานของ Code*
+👨🏻‍💻 **การทำงานของ Code**
 
 🔑 **DownloadPaymentConfirmation**
 ``` c#
@@ -904,7 +905,7 @@ public IHttpActionResult DownloadPaymentConfirmation(DownloadFileInfo downloadFi
     }
 }
 ```
-DownloadPaymentConfirmationFile
+**DownloadPaymentConfirmationFile**
 ```c#
 public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
 {
@@ -944,7 +945,7 @@ public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
     return result;
 }
 ```
-DownloadPaymentConfirmationFile
+**DownloadPaymentConfirmationFile**
 ```c#
  public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
 {
@@ -994,7 +995,7 @@ DownloadPaymentConfirmationFile
 <img width="959" alt="Paycode Follow up" src="https://user-images.githubusercontent.com/46476206/147043109-21dc5ee2-ce08-4c7c-a3c8-a420f5bd2611.png">
 
 
-*การทำงานของ Code*
+👨🏻‍💻 *การทำงานของ Code*
 
 🔑 **DownloadPaycodeFollowUp**
 ``` c#
@@ -1045,7 +1046,9 @@ public IHttpActionResult DownloadPaycodeFollowUp(PaycodeFollowupParam paycodeFol
     }
 }
 ```
-CreatedNewPaycodeFollowUp
+
+**CreatedNewPaycodeFollowUp**
+
 ```c#
 public FileInfo CreatedNewPaycodeFollowUp(UserInfo userInfo, PaycodeFollowupParam followUpDate)
 {
@@ -1171,7 +1174,7 @@ public FileInfo CreatedNewPaycodeFollowUp(UserInfo userInfo, PaycodeFollowupPara
 
 <img width="956" alt="Paycode Reply" src="https://user-images.githubusercontent.com/46476206/147043128-09f989bf-e689-46b7-b354-1df02850edfa.png">
 
-*การทำงานของ Code*
+👨🏻‍💻 **การทำงานของ Code**
 
 🔑 **DownloadPaycodeReply**
 ``` c#
@@ -1217,7 +1220,9 @@ public IHttpActionResult DownloadPaycodeReply(DownloadFileInfo downloadFileInfo)
     }
 }
 ```
-DownloadPaycodeReplyFile
+
+**DownloadPaycodeReplyFile**
+
 ```c#
 public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
 {
@@ -1257,7 +1262,9 @@ public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
     return result;
 }
 ```
-DownloadPaycodeReplyFile
+
+**DownloadPaycodeReplyFile**
+
 ```c# 
 public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
 {
@@ -1305,7 +1312,7 @@ public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
 
 <img width="958" alt="Recurring Follow UP" src="https://user-images.githubusercontent.com/46476206/147043176-3b9bd2ca-8762-4cac-8775-1160a03fe604.png">
 
-*การทำงานของ Code*
+👨🏻‍💻 **การทำงานของ Code**
 
 🔑 **DownloadRecurringFollowUp**
 ``` c#
@@ -1424,7 +1431,9 @@ public IHttpActionResult DownloadSaleLead(DownloadFileInfo downloadFileInfo)
     }
 }
 ```
-DownloadSaleLeadFile
+
+**DownloadSaleLeadFile**
+
 ```c#
  public FileInfo DownloadSaleLeadFile(UserInfo user, string contentID)
 {
