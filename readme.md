@@ -32,16 +32,13 @@ public IHttpActionResult UploadYesSale(FileInfo fileInfo)
 {
     try
     {
+        // step 1 เช็คว่าเป็น Broker ที่กำหนดไว้หรือไม่?
+        // แต่ก่อนมี TVD เป็น Broker แต่ตอนนี้ได้ยกเลิกไปแล้ว
         var user = ApplicationInfoProvider.GetUserInfo(User.Identity as ClaimsIdentity);
         if (user.Company != PartyCode.IDBL && user.Company != PartyCode.TVD)
         {
             throw new UnauthorizedAccessException("Invalid Company");
         }
-
-        //UserInfo user = new UserInfo()
-        //{
-        //    Username = "arnut.thi",
-        //};
 
         ObjectParam param = new ObjectParam()
         {
@@ -50,6 +47,8 @@ public IHttpActionResult UploadYesSale(FileInfo fileInfo)
         };
 
         ITeleServiceAction action = new TeleServiceAction();
+        
+        // step 2 ก็มาทำที่ Bussiness logic แล้วจะเอาข้อมูลไฟล์ที่ได้ไป Save เพื่อไปบันทึกลง Database
         action.UploadYesSale(param);
         return Ok();
     }
@@ -81,6 +80,69 @@ public IHttpActionResult UploadYesSale(FileInfo fileInfo)
 
 ```
 
+
+```c#
+public void UploadYesSale(ObjectParam param)
+{
+    // step 1 ไปดึงข้อมูลของแต่ละไฟล์ออกมา ว่ามีกี่รายการ/ แปลงข้อมูลจากไป เป็น Item
+    DelimitedFileEngine engine = new DelimitedFileEngine(typeof(YesSaleLayout));
+    ITeleRepository repository = new TeleRepository();
+    IEnumerable<YesSaleLayout> items = null;
+
+    string strContentFile = Encoding.GetEncoding(874).GetString(param.File.Content);
+    try
+    {
+        //อ่านค่า Content แปลงฟอร์แมตออกมา
+        items = engine.ReadString(strContentFile) as IEnumerable<YesSaleLayout>;
+    }
+    catch (Exception ex)
+    {
+        string e = ex.Message;
+        if (ex.InnerException != null)
+        {
+            e = e + " ==> " + ex.InnerException.Message;
+            if (ex.InnerException.InnerException != null)
+            {
+                e = e + " ==> " + ex.InnerException.InnerException.Message;
+            }
+        }
+        throw new ApplicationException("ไฟล์ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบไฟล์ : " + e);
+    }
+
+    //step 2. เมื่ออ่านค่ามาแล้ว ก็จะส่งข้อมูลที่ได้ไปยัง Database 
+    repository.UploadYesSale(param, items);
+    
+    // step3. send mail
+    DateTime now = repository.GetCurrentDateTime();
+    var variables = new Dictionary<string, string>() {
+        { "Function", "Upload Yes Sale File" },
+        { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
+        { "TotalItem", string.Format("{0:N0}", items.Count()) }
+    };
+
+    string mailCode = string.Empty;
+    string partyCode = param.User.Company;
+    if (partyCode == PartyCode.IDBL)
+    {
+        mailCode = MailCode.TELE_IDBL;
+    }
+    else if (partyCode == PartyCode.TVD)
+    {
+        mailCode = MailCode.TELE_TVD;
+    }
+
+    EMailFromDb email = new EMailFromDb();
+    try
+    {
+        email.Send(mailCode, variables);
+    }
+    catch (Exception ex)
+    {
+        throw new ApplicationException("ไม่สามารถส่ง E-mail ได้ : " + ex.Message);
+    }
+}
+
+```
 ### 🎬 **Cancel Case** 
 🔎 เพื่อจัดส่งรายการลูกค้าที่ได้รับการติดต่อจาก Confirmation call แต่มีความประสงค์จะยกเลิกกธ. ให้ BLA
 
