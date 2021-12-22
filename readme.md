@@ -17,6 +17,15 @@ Gitlab Repo
 ### 🎬 **First Billing** 
 🔎 รายการส่งตัดบัตรเครดิตงวดแรก
 
+ > save ข้อมูลลง db
+
+ > สร้างไฟล์สำหรับส่งตัดบัตร
+
+ > วางไฟล์ไปที่  sftp server เพื่อตัดบัตร"
+
+🧪 **source**
+
+    isishq11.bla.co.th/ISIS2013/ISIS.Telemarketing
 
 ### 🎬 **Yes Sale** 
 🔎 เพื่อจัดส่งรายการ Yes sale ที่ตรวจสอบคุณภาพเรียบร้อยแล้วให้ BLA พิจารณาออกกรมธรรม์
@@ -757,7 +766,9 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
     }
 }
 ```
-🔓 DownloadPolicyUpdateFile
+
+ **DownloadPolicyUpdateFile**
+
 ```c#
  public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
 {
@@ -799,7 +810,9 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
     }
 }
 ```
-🔓 DownloadPolicyUpdateFile Method
+
+**DownloadPolicyUpdateFile Method**
+
 ``` c#
 public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
 {
