@@ -367,7 +367,9 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 
 
 *การทำงานของ Code*
+
 🔑 **UploadApplicationInfo**
+
 ``` c#
  [HttpPost]
         [Route("UploadApplicationInfo")]
@@ -419,7 +421,9 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         }
 
 ```
-UploadApplicationInfo
+
+**UploadApplicationInfo**
+
 ```c#
  public void UploadApplicationInfo(ObjectParam param)
 {
@@ -446,6 +450,7 @@ UploadApplicationInfo
         }
         throw new ApplicationException("ไฟล์ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบไฟล์ : " + e);
     }
+
     repository.UploadApplicationInfo(param, items);
 
     #region Send SMS
@@ -527,7 +532,12 @@ UploadApplicationInfo
     }
 }
 ```
-UploadApplicationInfo
+**UploadApplicationInfo**
+
+> นำข้อมูลที่ได้มาวนลูป เพื่อ Save ลง Databse
+
+> ทำการ Gen PayCode แล้วก็บันทึกข้อมูลเพื่อรอส่ง SMS
+
 ```c# 
  public void UploadApplicationInfo(ObjectParam param, IEnumerable<ApplicationInfoLayout> items)
 {
