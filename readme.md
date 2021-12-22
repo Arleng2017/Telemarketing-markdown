@@ -24,6 +24,8 @@ Gitlab Repo
 <img width="959" alt="yessale" src="https://user-images.githubusercontent.com/46476206/147037281-a741cc06-fc60-4cbb-a14e-ccc6f9e10844.png">
 
 *การทำงานของ Code*
+
+🔑 **UploadYesSale**
 ``` c#
 [HttpPost]
 [Route("UploadYesSale")]
@@ -149,6 +151,8 @@ public void UploadYesSale(ObjectParam param)
 <img width="959" alt="Cancel Case" src="https://user-images.githubusercontent.com/46476206/147037350-49db2bce-19c9-4aa5-a7f2-9769ba5b5151.png">
 
 *การทำงานของ Code*
+
+🔑 **UploadCancelCase**
 ``` c#
 [HttpPost]
 [Route("UploadCancelCase")]
@@ -201,6 +205,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     }
 }
 ```
+UploadCancelCase
 ```c#
    public void UploadCancelCase(ObjectParam param)
 {
@@ -309,7 +314,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     }
 }
 ```
-
+SavePolicyCancel
 ```c# 
  public void SavePolicyCancel(IDL_SALE_CONTENT saleContent)
         {
@@ -341,6 +346,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 
 
 *การทำงานของ Code*
+🔑 **UploadApplicationInfo**
 ``` c#
  [HttpPost]
         [Route("UploadApplicationInfo")]
@@ -392,6 +398,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         }
 
 ```
+UploadApplicationInfo
 ```c#
  public void UploadApplicationInfo(ObjectParam param)
 {
@@ -499,6 +506,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     }
 }
 ```
+UploadApplicationInfo
 ```c# 
  public void UploadApplicationInfo(ObjectParam param, IEnumerable<ApplicationInfoLayout> items)
 {
@@ -615,6 +623,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 
 *การทำงานของ Code*
 
+🔑 **DownloadPolicyUpdate**
 ``` c#
 [HttpPost]
 [Route("DownloadPolicyUpdate")]
@@ -666,7 +675,7 @@ public IHttpActionResult DownloadPolicyUpdate(DownloadFileInfo downloadFileInfo)
 
 *การทำงานของ Code*
 
-🔑 DownloadPolicyCancel
+🔑 **DownloadPolicyCancel**
 ``` c#
 [HttpPost]
 [Route("DownloadPolicyCancel")]
@@ -800,7 +809,7 @@ public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
 
 *การทำงานของ Code*
 
-DownloadPaymentConfirmation
+🔑 **DownloadPaymentConfirmation**
 ``` c#
 [HttpPost]
 [Route("DownloadPaymentConfirmation")]
@@ -935,6 +944,8 @@ DownloadPaymentConfirmationFile
 
 
 *การทำงานของ Code*
+
+🔑 **DownloadPaycodeFollowUp**
 ``` c#
 [HttpPost]
 [Route("DownloadPaycodeFollowUp")]
@@ -1110,6 +1121,8 @@ public FileInfo CreatedNewPaycodeFollowUp(UserInfo userInfo, PaycodeFollowupPara
 <img width="956" alt="Paycode Reply" src="https://user-images.githubusercontent.com/46476206/147043128-09f989bf-e689-46b7-b354-1df02850edfa.png">
 
 *การทำงานของ Code*
+
+🔑 **DownloadPaycodeReply**
 ``` c#
 [HttpPost]
 [Route("DownloadPaycodeReply")]
@@ -1242,6 +1255,8 @@ public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
 <img width="958" alt="Recurring Follow UP" src="https://user-images.githubusercontent.com/46476206/147043176-3b9bd2ca-8762-4cac-8775-1160a03fe604.png">
 
 *การทำงานของ Code*
+
+🔑 **DownloadRecurringFollowUp**
 ``` c#
 [HttpPost]
 [Route("DownloadRecurringFollowUp")]
@@ -1313,6 +1328,8 @@ public IHttpActionResult DownloadRecurringFollowUp()
 <img width="956" alt="sale lead" src="https://user-images.githubusercontent.com/46476206/147043215-32c5b962-7018-4663-8724-4a9b97037bbb.png">
 
 *การทำงานของ Code*
+
+🔑 **DownloadSaleLead**
 ``` c#
 [HttpPost]
 [Route("DownloadSaleLead")]
@@ -1356,7 +1373,7 @@ public IHttpActionResult DownloadSaleLead(DownloadFileInfo downloadFileInfo)
     }
 }
 ```
-
+DownloadSaleLeadFile
 ```c#
  public FileInfo DownloadSaleLeadFile(UserInfo user, string contentID)
 {
