@@ -1,18 +1,31 @@
 #  Telemarketing
 Gitlab Repo 
+
+[Repo Link](http://gitlab.bla.co.th/telemarketing/telemarketing.api)
 > http://gitlab.bla.co.th/telemarketing/telemarketing.api
         
 💻 หน้า UI หลัก 
 
 <img width="949" alt="main desktop" src="https://user-images.githubusercontent.com/46476206/147031685-0121d171-49b2-4d56-a437-488bb3786d69.png">
 
+# Upload Menu
+* [First Billing](#FirstBilling)
+* [Link Month](#month)
+* [Link Day](#day)
+* [Link Date Time](#date-time)
 
+# Download Menu
+* [Link Year](#year)
+* [Link Month](#month)
+* [Link Day](#day)
+* [Link Date Time](#date-time)
 ---
 ## ⚙️ **หลักการทำงานของโค้ด**
 
 
 ## 📌 **Upload**
 ---
+# FirstBilling
 ### 🎬 **First Billing** 
 🔎 รายการส่งตัดบัตรเครดิตงวดแรก
 
