@@ -298,46 +298,46 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
 *การทำงานของ Code*
 ``` c#
 [HttpPost]
-        [Route("DownloadPaymentConfirmation")]
-        [Authorize(Roles = "Tele.IDBL.DownloadPaymentConfirmation, Tele.TVD.DownloadPaymentConfirmation")]
-        public IHttpActionResult DownloadPaymentConfirmation(DownloadFileInfo downloadFileInfo)
+[Route("DownloadPaymentConfirmation")]
+[Authorize(Roles = "Tele.IDBL.DownloadPaymentConfirmation, Tele.TVD.DownloadPaymentConfirmation")]
+public IHttpActionResult DownloadPaymentConfirmation(DownloadFileInfo downloadFileInfo)
+{
+    try
+    {
+        var user = ApplicationInfoProvider.GetUserInfo(User.Identity as ClaimsIdentity);
+        if (user.Company != PartyCode.IDBL && user.Company != PartyCode.TVD)
         {
-            try
+            throw new UnauthorizedAccessException("Invalid Company");
+        }
+        ITeleServiceAction action = new TeleServiceAction();
+        var result = action.DownloadPaymentConfirmationFile(user, downloadFileInfo.ContentId);                
+        return Ok(result);
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        return Content(HttpStatusCode.Unauthorized, new ResponseMessage() { Message = ex.Message });
+    }
+    catch (ApplicationException ex)
+    {
+        return BadRequest(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        string e = ex.Message;
+        if (ex.InnerException != null)
+        {
+            e = e + " ==> " + ex.InnerException.Message;
+            if (ex.InnerException.InnerException != null)
             {
-                var user = ApplicationInfoProvider.GetUserInfo(User.Identity as ClaimsIdentity);
-                if (user.Company != PartyCode.IDBL && user.Company != PartyCode.TVD)
-                {
-                    throw new UnauthorizedAccessException("Invalid Company");
-                }
-                ITeleServiceAction action = new TeleServiceAction();
-                var result = action.DownloadPaymentConfirmationFile(user, downloadFileInfo.ContentId);                
-                return Ok(result);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Content(HttpStatusCode.Unauthorized, new ResponseMessage() { Message = ex.Message });
-            }
-            catch (ApplicationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                string e = ex.Message;
-                if (ex.InnerException != null)
-                {
-                    e = e + " ==> " + ex.InnerException.Message;
-                    if (ex.InnerException.InnerException != null)
-                    {
-                        e = e + " ==> " + ex.InnerException.InnerException.Message;
-                    }
-                }
-
-                Logger logger = LogManager.GetCurrentClassLogger();
-                logger.Error("MethodName : " + MethodBase.GetCurrentMethod().Name + " ==> " + e);
-                return InternalServerError(ex);
+                e = e + " ==> " + ex.InnerException.InnerException.Message;
             }
         }
+
+        Logger logger = LogManager.GetCurrentClassLogger();
+        logger.Error("MethodName : " + MethodBase.GetCurrentMethod().Name + " ==> " + e);
+        return InternalServerError(ex);
+    }
+}
 ```
 ### 🎬 **Paycode Follow Up** 
 🔎 ติดตามรายการ paycode ที่ยังไม่ได้ชำระเงิน
