@@ -8,30 +8,20 @@ Gitlab Repo
 
 <img width="949" alt="main desktop" src="https://user-images.githubusercontent.com/46476206/147031685-0121d171-49b2-4d56-a437-488bb3786d69.png">
 
-# Upload Menu
-* [First Billing](#FirstBilling)
-* [Link Month](#month)
-* [Link Day](#day)
-* [Link Date Time](#date-time)
 
-# Download Menu
-* [Link Year](#year)
-* [Link Month](#month)
-* [Link Day](#day)
-* [Link Date Time](#date-time)
 ---
 ## ⚙️ **หลักการทำงานของโค้ด**
 
-
 ## 📌 **Upload**
 ---
-# FirstBilling
 ### 🎬 **First Billing** 
 🔎 รายการส่งตัดบัตรเครดิตงวดแรก
 
 
 ### 🎬 **Yes Sale** 
 🔎 เพื่อจัดส่งรายการ Yes sale ที่ตรวจสอบคุณภาพเรียบร้อยแล้วให้ BLA พิจารณาออกกรมธรรม์
+
+<img width="959" alt="yessale" src="https://user-images.githubusercontent.com/46476206/147037281-a741cc06-fc60-4cbb-a14e-ccc6f9e10844.png">
 
 *การทำงานของ Code*
 ``` c#
@@ -94,6 +84,8 @@ public IHttpActionResult UploadYesSale(FileInfo fileInfo)
 ### 🎬 **Cancel Case** 
 🔎 เพื่อจัดส่งรายการลูกค้าที่ได้รับการติดต่อจาก Confirmation call แต่มีความประสงค์จะยกเลิกกธ. ให้ BLA
 
+<img width="959" alt="Cancel Case" src="https://user-images.githubusercontent.com/46476206/147037350-49db2bce-19c9-4aa5-a7f2-9769ba5b5151.png">
+
 *การทำงานของ Code*
 ``` c#
 [HttpPost]
@@ -147,6 +139,10 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 ```
 ### 🎬 **Application Info** 
 🔎 เพื่อส่งข้อมูลคำขอเอาประกันภัย สำหรับรายการชำระผ่านช่องทาง Counter Service (7-11)
+
+<img width="956" alt="ApplicationInfo" src="https://user-images.githubusercontent.com/46476206/147037423-5bd37024-414e-4087-a8df-234014f68cc3.png">
+
+
 
 *การทำงานของ Code*
 ``` c#
@@ -206,6 +202,8 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 ### 🎬 **First Billing** 
 🔎 ผลการตัดบัตรเครดิตงวดแรก
 
+<img width="955" alt="DownloadFirstBilling" src="https://user-images.githubusercontent.com/46476206/147037476-f0cb2b8c-5eb3-4385-a437-a2fa65488614.png">
+
 *การทำงานของ Code*
 ``` c#
 
@@ -214,7 +212,11 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 🔎 เพื่อ BLA จัดส่งรายการลูกค้าที่ออกกรมธรรม์แล้ว ให้ IDB โดยระบุ Policy no. Mailing date เพื่อใช้ติดต่อทำ Confirmation call 
 การส่งข้อมูล จัดส่งเฉพาะรายการที่ส่งกธ.ให้ลูกค้าแล้ว ตาม Transaction date"
 
+<img width="961" alt="PolicyUpdate" src="https://user-images.githubusercontent.com/46476206/147037523-24482573-4cd2-405e-8eff-601c4caa4cf9.png">
+
+
 *การทำงานของ Code*
+
 ``` c#
 [HttpPost]
 [Route("DownloadPolicyUpdate")]
@@ -260,6 +262,9 @@ public IHttpActionResult DownloadPolicyUpdate(DownloadFileInfo downloadFileInfo)
 ```
 ### 🎬 **Policy Cancel** 
 🔎 เพื่อ BLA จัดส่งรายการยกเลิกกธ. ให้ IDB update Policy status
+
+<img width="960" alt="Policy Cancel" src="https://user-images.githubusercontent.com/46476206/147037595-e8582ca2-c4c3-44be-9f1d-f6a094ea5306.png">
+
 
 *การทำงานของ Code*
 ``` c#
@@ -308,6 +313,10 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
 ### 🎬 **Payment Confirmation** 
 🔎 เพื่อส่งข้อมูลยืนยันการได้รับชำระเงินเบี้ยประกันภัย สำหรับรายการชำระผ่านช่องทาง Counter Service (7-11)
 
+<img width="959" alt="Payment Confirimation" src="https://user-images.githubusercontent.com/46476206/147043060-36012a37-7f84-4f84-a192-e9fff09513eb.png">
+
+
+
 *การทำงานของ Code*
 ``` c#
 [HttpPost]
@@ -354,6 +363,9 @@ public IHttpActionResult DownloadPaymentConfirmation(DownloadFileInfo downloadFi
 ```
 ### 🎬 **Paycode Follow Up** 
 🔎 ติดตามรายการ paycode ที่ยังไม่ได้ชำระเงิน
+
+<img width="959" alt="Paycode Follow up" src="https://user-images.githubusercontent.com/46476206/147043109-21dc5ee2-ce08-4c7c-a3c8-a420f5bd2611.png">
+
 
 *การทำงานของ Code*
 ``` c#
@@ -407,6 +419,8 @@ public IHttpActionResult DownloadPaycodeFollowUp(PaycodeFollowupParam paycodeFol
 ### 🎬 **Paycode Reply** 
 🔎 รายการที่ทำการตอบกลับไปทาง I-Direct เพื่อให้ทาง I-Direct Download ไปติดตามลูกค้า
 
+<img width="956" alt="Paycode Reply" src="https://user-images.githubusercontent.com/46476206/147043128-09f989bf-e689-46b7-b354-1df02850edfa.png">
+
 *การทำงานของ Code*
 ``` c#
 [HttpPost]
@@ -453,6 +467,8 @@ public IHttpActionResult DownloadPaycodeReply(DownloadFileInfo downloadFileInfo)
 ```
 ### 🎬 **Recurring Follow Up** 
 🔎 ติดตามรายการตัดบัตรที่ยังไม่ได้ชำระเงิน
+
+<img width="958" alt="Recurring Follow UP" src="https://user-images.githubusercontent.com/46476206/147043176-3b9bd2ca-8762-4cac-8775-1160a03fe604.png">
 
 *การทำงานของ Code*
 ``` c#
@@ -522,6 +538,8 @@ public IHttpActionResult DownloadRecurringFollowUp()
 ```
 ### 🎬 **Sale Lead** 
 🔎 เพื่อ BLA จัดส่งรายการ DRTV's Call List
+
+<img width="956" alt="sale lead" src="https://user-images.githubusercontent.com/46476206/147043215-32c5b962-7018-4663-8724-4a9b97037bbb.png">
 
 *การทำงานของ Code*
 ``` c#
