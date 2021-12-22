@@ -26,6 +26,10 @@ Gitlab Repo
 *การทำงานของ Code*
 
 🔑 **UploadYesSale**
+> step 1 เช็คว่าเป็น Broker ที่กำหนดไว้หรือไม่?
+
+> step 2 ก็มาทำที่ Bussiness logic แล้วจะเอาข้อมูลไฟล์ที่ได้ไป Save
+
 ``` c#
 [HttpPost]
 [Route("UploadYesSale")]
@@ -81,8 +85,12 @@ public IHttpActionResult UploadYesSale(FileInfo fileInfo)
 }
 
 ```
+**UploadYesSale**
+> step 1. ไปดึงข้อมูลของแต่ละไฟล์ออกมา ว่ามีกี่รายการ/ แปลงข้อมูลจากไป เป็น Item
 
+> step 2. เมื่ออ่านค่ามาแล้ว ก็จะส่งข้อมูลที่ได้ไปยัง Database 
 
+> step 3. send mail
 ```c#
 public void UploadYesSale(ObjectParam param)
 {
@@ -153,6 +161,7 @@ public void UploadYesSale(ObjectParam param)
 *การทำงานของ Code*
 
 🔑 **UploadCancelCase**
+> step 1. Upload รายการที่ลูกค้าก่อนยกเลิก
 ``` c#
 [HttpPost]
 [Route("UploadCancelCase")]
@@ -175,7 +184,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 
         ITeleServiceAction action = new TeleServiceAction();
 
-        //step 1. Upload รายการที่ลูกค้าก่อนยกเลิก
+        //step 1. Upload รายการลูกค้าก่อนยกเลิก
         action.UploadCancelCase(param);
         return Ok();
     }
@@ -205,7 +214,16 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     }
 }
 ```
-UploadCancelCase
+
+**UploadCancelCase**
+> สร้าง Object เพื่อมา Assign ค่า
+
+> ระบบส่งรายการที่มีการยกเลิก เข้าสู่ระบบ NewBis
+
+> บันทึกข้อมูลรายการลง Database
+
+> ถ้าทำรายการก่อนหน้าเสร็จสิ้น ก็จะมาส่ง Email
+
 ```c#
    public void UploadCancelCase(ObjectParam param)
 {
@@ -314,7 +332,10 @@ UploadCancelCase
     }
 }
 ```
-SavePolicyCancel
+
+**SavePolicyCancel**
+> บันทึกข้อมูลรายการลง Database
+
 ```c# 
  public void SavePolicyCancel(IDL_SALE_CONTENT saleContent)
         {
