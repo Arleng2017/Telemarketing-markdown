@@ -38,8 +38,8 @@ public IHttpActionResult UploadYesSale(FileInfo fileInfo)
 {
     try
     {
-        // step 1 เช็คว่าเป็น Broker ที่กำหนดไว้หรือไม่?
-        // แต่ก่อนมี TVD เป็น Broker แต่ตอนนี้ได้ยกเลิกไปแล้ว
+        💡 // step 1 เช็คว่าเป็น Broker ที่กำหนดไว้หรือไม่?
+        💡 // แต่ก่อนมี TVD เป็น Broker แต่ตอนนี้ได้ยกเลิกไปแล้ว
         var user = ApplicationInfoProvider.GetUserInfo(User.Identity as ClaimsIdentity);
         if (user.Company != PartyCode.IDBL && user.Company != PartyCode.TVD)
         {
@@ -54,7 +54,7 @@ public IHttpActionResult UploadYesSale(FileInfo fileInfo)
 
         ITeleServiceAction action = new TeleServiceAction();
         
-        // step 2 ก็มาทำที่ Bussiness logic แล้วจะเอาข้อมูลไฟล์ที่ได้ไป Save เพื่อไปบันทึกลง Database
+        💡 // step 2 ก็มาทำที่ Bussiness logic แล้วจะเอาข้อมูลไฟล์ที่ได้ไป Save เพื่อไปบันทึกลง Database
         action.UploadYesSale(param);
         return Ok();
     }
@@ -86,15 +86,16 @@ public IHttpActionResult UploadYesSale(FileInfo fileInfo)
 
 ```
 **UploadYesSale**
-> step 1. ไปดึงข้อมูลของแต่ละไฟล์ออกมา ว่ามีกี่รายการ/ แปลงข้อมูลจากไป เป็น Item
+> step 1. ไปดึงข้อมูลของแต่ละไฟล์ออกมา ว่ามีกี่รายการ/ แปลงข้อมูลไปเป็น Item
 
 > step 2. เมื่ออ่านค่ามาแล้ว ก็จะส่งข้อมูลที่ได้ไปยัง Database 
 
 > step 3. send mail
+
 ```c#
 public void UploadYesSale(ObjectParam param)
 {
-    // step 1 ไปดึงข้อมูลของแต่ละไฟล์ออกมา ว่ามีกี่รายการ/ แปลงข้อมูลจากไป เป็น Item
+    // step 1 ไปดึงข้อมูลของแต่ละไฟล์ออกมา ว่ามีกี่รายการ/ แปลงข้อมูลไป เป็น Item
     DelimitedFileEngine engine = new DelimitedFileEngine(typeof(YesSaleLayout));
     ITeleRepository repository = new TeleRepository();
     IEnumerable<YesSaleLayout> items = null;
@@ -102,7 +103,7 @@ public void UploadYesSale(ObjectParam param)
     string strContentFile = Encoding.GetEncoding(874).GetString(param.File.Content);
     try
     {
-        //อ่านค่า Content แปลงฟอร์แมตออกมา
+        💡 //อ่านค่า Content แปลงฟอร์แมตออกมา
         items = engine.ReadString(strContentFile) as IEnumerable<YesSaleLayout>;
     }
     catch (Exception ex)
@@ -119,10 +120,10 @@ public void UploadYesSale(ObjectParam param)
         throw new ApplicationException("ไฟล์ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบไฟล์ : " + e);
     }
 
-    //step 2. เมื่ออ่านค่ามาแล้ว ก็จะส่งข้อมูลที่ได้ไปยัง Database 
+    💡 //step 2. เมื่ออ่านค่ามาแล้ว ก็จะส่งข้อมูลที่ได้ไปยัง Database 
     repository.UploadYesSale(param, items);
     
-    // step3. send mail
+    💡 //  step3. send mail
     DateTime now = repository.GetCurrentDateTime();
     var variables = new Dictionary<string, string>() {
         { "Function", "Upload Yes Sale File" },
@@ -161,7 +162,9 @@ public void UploadYesSale(ObjectParam param)
 *การทำงานของ Code*
 
 🔑 **UploadCancelCase**
+
 > step 1. Upload รายการที่ลูกค้าก่อนยกเลิก
+
 ``` c#
 [HttpPost]
 [Route("UploadCancelCase")]
@@ -184,7 +187,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 
         ITeleServiceAction action = new TeleServiceAction();
 
-        //step 1. Upload รายการลูกค้าก่อนยกเลิก
+        💡 //step 1. Upload รายการลูกค้าก่อนยกเลิก
         action.UploadCancelCase(param);
         return Ok();
     }
@@ -216,6 +219,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 ```
 
 **UploadCancelCase**
+
 > สร้าง Object เพื่อมา Assign ค่า
 
 > ระบบส่งรายการที่มีการยกเลิก เข้าสู่ระบบ NewBis
@@ -257,7 +261,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     string username = param.User.Username;
     string partyCode = param.User.Company;
 
-    // สร้าง Object เพื่อมา Assign ค่า
+    💡 // สร้าง Object เพื่อมา Assign ค่า
     IDL_SALE_CONTENT content = new IDL_SALE_CONTENT();
     content.CONTENT_ID = contentId;
     content.FILE_NAME = param.File.Filename;
@@ -288,8 +292,8 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
             cancelItem.CANCEL_TRANSACTION_DATE = DateTime.ParseExact(item.CancelCaseTransactionDate, "yyyyMMdd", CultureInfo.InvariantCulture);
             cancelCase.IDL_CANCEL_CASE_ITEM.Add(cancelItem);
 
-            //send cancel info to policy service
-            // ระบบส่งรายการที่มีการยกเลิก เข้าสู่ระบบ NewBis
+            💡 //send cancel info to policy service
+            💡 // ระบบส่งรายการที่มีการยกเลิก เข้าสู่ระบบ NewBis
             var result =  client.RequestToCancelPolicy(item.PolicyNumber, DateTime.ParseExact(item.CancelCaseDate, "yyyyMMdd", CultureInfo.InvariantCulture));
             if (!result.Successed)
             {
@@ -299,12 +303,12 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     }
 
     content.IDL_CANCEL_CASE.Add(cancelCase);
-    //บันทึกข้อมูลรายการลง Database
+    💡 //บันทึกข้อมูลรายการลง Database
     repository.SavePolicyCancel(content);
     #endregion
     
-    // send mail
-    //ถ้าทำรายการก่อนหน้าเสร็จสิ้น ก็จะมาส่ง Email
+    💡 // send mail
+    💡 //ถ้าทำรายการก่อนหน้าเสร็จสิ้น ก็จะมาส่ง Email
     var variables = new Dictionary<string, string>() {
         { "Function", "Upload Cancel Case File" },
         { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
@@ -334,6 +338,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 ```
 
 **SavePolicyCancel**
+
 > บันทึกข้อมูลรายการลง Database
 
 ```c# 
@@ -391,6 +396,9 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
                 };
 
                 ITeleServiceAction action = new TeleServiceAction();
+
+                // 💡
+
                 action.UploadApplicationInfo(param);
                 return Ok();
             }
@@ -419,7 +427,6 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
                 return InternalServerError(ex);
             }
         }
-
 ```
 
 **UploadApplicationInfo**
@@ -491,14 +498,14 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     }
     #endregion
 
-    // Send SMS
+   💡 // Send SMS
     bool result = false;
     result = CallServiceSendSMS(messages);
     if (result)
     {
         repository.SaveAppInfoSendSMS(appInfoSMSList);
 
-        // send mail
+        💡 // send mail
         var variables = new Dictionary<string, string>() {
             { "Function", "Upload Application Info File" },
             { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
@@ -548,7 +555,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         string contentId = GetNewDbID();
         int seqNumber = 0;
         string username = param.User.Username;
-        //string partyCode = GetPartyCode(param.User);
+        💡 //string partyCode = GetPartyCode(param.User);
         string partyCode = param.User.Company;
         IDL_SALE_CONTENT content = new IDL_SALE_CONTENT();
         content.CONTENT_ID = contentId;
@@ -556,7 +563,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         content.CONTENT = param.File.Content;
         content.CONTENT_FILE_TYPE = ContentFileType.ApplicationInfo;
         
-        //นำข้อมูลที่ได้มาวนลูป เพื่อ Save ลง Databse
+        💡 //นำข้อมูลที่ได้มาวนลูป เพื่อ Save ลง Databse
         foreach (var item in items)
         {
             seqNumber++;
@@ -614,7 +621,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         }
         #endregion
 
-        // ทำการ Gen PayCode แล้วก็บันทึกข้อมูลเพื่อรอส่ง SMS
+        💡 // ทำการ Gen PayCode แล้วก็บันทึกข้อมูลเพื่อรอส่ง SMS
         #region Call package for insert data into CSO_Pay_item and CSO_Link_IDL_FYP
         string connectionString = ConfigurationManager.ConnectionStrings["isis_db"].ConnectionString;
         using (OracleConnection con = new OracleConnection(connectionString))
@@ -627,7 +634,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         }
         #endregion
 
-        // created paycode reply file
+         // created paycode reply file
         SavePaycodeReply(partyCode, username);
     }
 }
