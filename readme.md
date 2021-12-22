@@ -665,6 +665,8 @@ public IHttpActionResult DownloadPolicyUpdate(DownloadFileInfo downloadFileInfo)
 
 
 *การทำงานของ Code*
+
+🔑 DownloadPolicyCancel
 ``` c#
 [HttpPost]
 [Route("DownloadPolicyCancel")]
@@ -708,14 +710,97 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
     }
 }
 ```
+🔓 DownloadPolicyUpdateFile
+```c#
+ public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
+{
+    FileInfo result = null;
+    using (TeleEntities context = new TeleEntities())
+    {
+        DateTime now = GetCurrentDbDataTime();
+
+        var saleContent = context.IDL_SALE_CONTENT
+            .Where(x => x.CONTENT_ID == contentID)
+            .FirstOrDefault();
+
+        if (saleContent != null)
+        {
+            if (saleContent.IDL_POLICY_UPDATE_SENT.FirstOrDefault().IDL_POL_UPD_SENT_USED == null)
+            {
+                IDL_POL_UPD_SENT_USED used = new IDL_POL_UPD_SENT_USED();
+                used.POLICY_UPDATE_SENT_ID = saleContent.IDL_POLICY_UPDATE_SENT.FirstOrDefault().POLICY_UPDATE_SENT_ID;
+                used.CREATED_ON = now;
+                used.CREATED_BY = user.Username;
+                context.IDL_POL_UPD_SENT_USED.Add(used);
+                context.SaveChanges();
+
+                result = new FileInfo();
+                result.Filename = saleContent.FILE_NAME;
+                result.Content = saleContent.CONTENT;
+                result.ItemCount = saleContent.IDL_POLICY_UPDATE_SENT.FirstOrDefault().IDL_POL_UPDATE_SENT_ITEM.Count();
+                return result;
+            }
+            else
+            {
+                throw new ApplicationException("ไฟล์ถูก Download ไปแล้ว");
+            }
+        }
+        else
+        {
+            throw new ApplicationException("ไม่พบไฟล์");
+        }
+    }
+}
+```
+🔓 DownloadPolicyUpdateFile Method
+``` c#
+public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
+{
+    ITeleRepository repository = new TeleRepository();
+    var result =  repository.DownloadPolicyUpdateFile(user, contentID);
+
+    // send mail
+    DateTime now = repository.GetCurrentDateTime();
+    var variables = new Dictionary<string, string>() {
+        { "Function", "Donwload Policy Update File" },
+        { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
+        { "TotalItem", string.Format("{0:N0}", result.ItemCount) }
+    };
+
+    string mailCode = string.Empty;
+    //string partyCode = repository.GetPartyCode(user);
+    string partyCode = user.Company;
+    if (partyCode == PartyCode.IDBL)
+    {
+        mailCode = MailCode.TELE_IDBL;
+    }
+    else if (partyCode == PartyCode.TVD)
+    {
+        mailCode = MailCode.TELE_TVD;
+    }
+
+    EMailFromDb email = new EMailFromDb();
+    try
+    {
+        email.Send(mailCode, variables);
+    }
+    catch (Exception ex)
+    {
+        throw new ApplicationException("ไม่สามารถส่ง E-mail ได้ : " + ex.Message);
+    }
+
+    return result;
+}
+```
 ### 🎬 **Payment Confirmation** 
 🔎 เพื่อส่งข้อมูลยืนยันการได้รับชำระเงินเบี้ยประกันภัย สำหรับรายการชำระผ่านช่องทาง Counter Service (7-11)
 
 <img width="959" alt="Payment Confirimation" src="https://user-images.githubusercontent.com/46476206/147043060-36012a37-7f84-4f84-a192-e9fff09513eb.png">
 
 
-
 *การทำงานของ Code*
+
+DownloadPaymentConfirmation
 ``` c#
 [HttpPost]
 [Route("DownloadPaymentConfirmation")]
@@ -759,6 +844,90 @@ public IHttpActionResult DownloadPaymentConfirmation(DownloadFileInfo downloadFi
     }
 }
 ```
+DownloadPaymentConfirmationFile
+```c#
+public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
+{
+    ITeleRepository repository = new TeleRepository();
+    var result =  repository.DownloadPaymentConfirmationFile(user, contentID);
+
+    // send mail
+    DateTime now = repository.GetCurrentDateTime();
+    var variables = new Dictionary<string, string>() {
+        { "Function", "Download Payment Confirmation File" },
+        { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
+        { "TotalItem", string.Format("{0:N0}", result.ItemCount) }
+    };
+
+    string mailCode = string.Empty;
+    //string partyCode = repository.GetPartyCode(user);
+    string partyCode = user.Company;
+    if (partyCode == PartyCode.IDBL)
+    {
+        mailCode = MailCode.TELE_IDBL;
+    }
+    else if (partyCode == PartyCode.TVD)
+    {
+        mailCode = MailCode.TELE_TVD;
+    }
+
+    EMailFromDb email = new EMailFromDb();
+    try
+    {
+        email.Send(mailCode, variables);
+    }
+    catch (Exception ex)
+    {
+        throw new ApplicationException("ไม่สามารถส่ง E-mail ได้ : " + ex.Message);
+    }
+
+    return result;
+}
+```
+DownloadPaymentConfirmationFile
+```c#
+ public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
+{
+    FileInfo result = null;
+    using (TeleEntities context = new TeleEntities())
+    {
+        DateTime now = GetCurrentDbDataTime();
+
+        var saleContent = context.IDL_SALE_CONTENT
+            .Where(x => x.CONTENT_ID == contentID)
+            .FirstOrDefault();
+
+        if (saleContent != null)
+        {
+            if(saleContent.IDL1_PAY_CONFIRM_SENT.FirstOrDefault().IDL1_PAY_CONFIRM_SENT_USED == null)
+            {
+                string payconfirmSentID = saleContent.IDL1_PAY_CONFIRM_SENT.FirstOrDefault().PAY_CONFIRM_SENT_ID;
+                IDL1_PAY_CONFIRM_SENT_USED used = new IDL1_PAY_CONFIRM_SENT_USED();
+                used.PAY_CONFIRM_SENT_ID = payconfirmSentID;
+                used.CREATED_ON = now;
+                used.CREATED_BY = user.Username;
+                context.IDL1_PAY_CONFIRM_SENT_USED.Add(used);
+                context.SaveChanges();
+
+                result = new FileInfo();
+                result.Filename = saleContent.FILE_NAME;
+                result.Content = saleContent.CONTENT;
+                result.ItemCount = saleContent.IDL1_PAY_CONFIRM_SENT.FirstOrDefault().IDL1_PAY_CONFIRM_SENT_ITEM.Count();
+                return result;
+            }
+            else
+            {
+                throw new ApplicationException("ไฟล์ถูก Download ไปแล้ว");
+            }
+        }
+        else
+        {
+            throw new ApplicationException("ไม่พบไฟล์");
+        }
+    }
+}
+```
+
 ### 🎬 **Paycode Follow Up** 
 🔎 ติดตามรายการ paycode ที่ยังไม่ได้ชำระเงิน
 
@@ -814,6 +983,127 @@ public IHttpActionResult DownloadPaycodeFollowUp(PaycodeFollowupParam paycodeFol
     }
 }
 ```
+CreatedNewPaycodeFollowUp
+```c#
+public FileInfo CreatedNewPaycodeFollowUp(UserInfo userInfo, PaycodeFollowupParam followUpDate)
+{
+    FileInfo result = null;
+
+    TRNPPremFollowUp fileDate = null;
+    followUpDate.EndDate = followUpDate.EndDate.AddDays(1).AddMilliseconds(-1);
+    ITeleRepository party = new TeleRepository();
+    //string partyCode = party.GetPartyCode(userInfo);
+    string partyCode = userInfo.Company;
+    IFollowUpRepository repository = new FollowUpRepository();
+
+    //โหลดรายการที่ต้องติดตามเบี้ย
+    var listPremFollowUp = repository.LoadCSOPremFollwUp(followUpDate.BeginDate, followUpDate.EndDate, partyCode);
+    if (listPremFollowUp.Count > 0)
+    {
+        List<string> policyNbrs = listPremFollowUp.Select(s => s.POLICY_NUMBER).Distinct().ToList();
+        //หาข้อมูลกรมธรรม์
+        List<TRNPCsRnDue> CsoNextDueTxns = repository.GetCsoNextDue(policyNbrs);
+
+        List<TRNPFollowUpLayout> trnpFollowUp = new List<TRNPFollowUpLayout>();
+        #region Header
+        TRNPFollowUpLayout headerFollowUp = new TRNPFollowUpLayout();
+        headerFollowUp.EffectiveDate = "EffectiveDate";
+        headerFollowUp.PaidToDate = "PaidToDate";
+        headerFollowUp.PaidDate = "PaidDate";
+        headerFollowUp.SMSSentDate = "DateSentSMS";
+        headerFollowUp.RefNo = "ReferenceNo";
+        headerFollowUp.PolicyNumber = "PolicyNo";
+        headerFollowUp.Name = "Name";
+        headerFollowUp.SurName = "Surname";
+        headerFollowUp.Product = "Product";
+        headerFollowUp.Plan = "Plan";
+        headerFollowUp.Premium = "Premium";
+        headerFollowUp.Installments = "Installments";
+        headerFollowUp.MobilePhone = "MobilePhone";
+        headerFollowUp.PayCode = "PayCode";
+        trnpFollowUp.Add(headerFollowUp);
+        #endregion
+
+        #region Detail
+        List<string> premNoticeIdItemsCancel = new List<string>();
+
+        foreach (var item in listPremFollowUp)
+        {
+            //ข้อมูลกรมธรรม์ ไว้เช็คกับ Mini ว่าถ้ามีการจ่ายช่องทางอื่น ให้ Cancel รายการ PayItem และไม่นำมารวมใน ReportFollowUp
+            var dueTxn = CsoNextDueTxns.Where(w => w.PolicyNumber == item.POLICY_NUMBER).First();
+
+            string miniYL = string.Format("{0:00}", dueTxn.PolicyYear) + string.Format("{0:00}", dueTxn.PolicyLot);
+            string followUpYL = string.Format("{0:00}", item.POLICY_YEAR) + string.Format("{0:00}", item.POLICY_LOT);
+
+            //string miniYL = dueTxn.PolicyYear.ToString() + dueTxn.PolicyLot.ToString();
+            //string followUpYL = item.POLICY_YEAR.ToString() + item.POLICY_LOT.ToString();
+
+            int miniYearLot = Convert.ToInt32(miniYL);
+            int followUpYearLot = Convert.ToInt32(followUpYL);
+
+            if (dueTxn.StatusCode == "10" || dueTxn.StatusCode == "13")
+            {
+                if (miniYearLot <= followUpYearLot)
+                {
+                    TRNPFollowUpLayout itemFollowUp = new TRNPFollowUpLayout();
+                    itemFollowUp.EffectiveDate = string.Format("{0:yyyyMMdd}", item.EFFECTIVE_DATE);
+                    itemFollowUp.PaidToDate = string.Format("{0:yyyyMMdd}", item.PAID_TO_DATE);
+                    itemFollowUp.PaidDate = string.Format("{0:yyyyMMdd}", item.PAID_DATE);
+                    itemFollowUp.SMSSentDate = string.Format("{0:yyyyMMdd}", item.NOTICE_SMS_ON);
+                    itemFollowUp.RefNo = item.REF_NO;
+                    itemFollowUp.PolicyNumber = item.POLICY_NUMBER;
+                    itemFollowUp.Name = item.INSURED_NAME;
+                    itemFollowUp.SurName = item.INSURED_SURNAME;
+                    itemFollowUp.Product = item.CAMPAIGN_CODE;
+                    itemFollowUp.Plan = item.PRODUCT_PLAN;
+                    itemFollowUp.Premium = string.Format("{0:0.00}", item.PREMIUM);
+                    itemFollowUp.Installments = string.Format("{0}/{1:00}", item.POLICY_YEAR, item.POLICY_LOT);
+                    itemFollowUp.MobilePhone = item.MOBILE_TEL1;
+                    itemFollowUp.PayCode = item.CS_PAY_CODE;
+                    trnpFollowUp.Add(itemFollowUp);
+                }
+                else
+                {
+                    //pay channel offline
+                    premNoticeIdItemsCancel.Add(item.PREM_NOTICE_ID);
+                }
+            }
+        }
+        #endregion
+
+        //trnpFollowUp.Count = 1 คือมีแค่ header
+        if (trnpFollowUp.Count > 1)
+        {
+            FileHelperEngine engine = new FileHelperEngine(typeof(TRNPFollowUpLayout));
+            var fileString = engine.WriteString(trnpFollowUp);
+            Encoding utf8 = Encoding.UTF8;
+
+            fileDate = new TRNPPremFollowUp();
+
+            fileDate.Content = utf8.GetBytes(fileString);
+            fileDate.FileName = string.Format("{0}{1:yyyyMMdd}.txt", "CSOFOLLOWUP_", DateTime.Today);
+            fileDate.ItemCount = trnpFollowUp.Count() - 1;
+
+            //insert cancel 
+            repository.CancelPayChannelOffline(premNoticeIdItemsCancel, "Offline Payment");
+
+            // Add Content
+            var premFollowUp = repository.AddNewPremFollowUpContent(fileDate.Content, fileDate.FileName, 0, userInfo.Username);
+            result = new FileInfo();
+            result.Content = fileDate.Content;
+            result.Filename = fileDate.FileName;
+
+            // Send Mail
+            SendMail(partyCode, fileDate.ItemCount, "Download CounterService FollowUp File");
+        }
+
+    }
+
+    return result;
+}
+```
+
+
 ### 🎬 **Paycode Reply** 
 🔎 รายการที่ทำการตอบกลับไปทาง I-Direct เพื่อให้ทาง I-Direct Download ไปติดตามลูกค้า
 
@@ -860,6 +1150,89 @@ public IHttpActionResult DownloadPaycodeReply(DownloadFileInfo downloadFileInfo)
         Logger logger = LogManager.GetCurrentClassLogger();
         logger.Error("MethodName : " + MethodBase.GetCurrentMethod().Name + " ==> " + e);
         return InternalServerError(ex);
+    }
+}
+```
+DownloadPaycodeReplyFile
+```c#
+public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
+{
+    ITeleRepository repository = new TeleRepository();
+    var result =  repository.DownloadPaycodeReplyFile(user, contentID);
+
+    // send mail
+    DateTime now = repository.GetCurrentDateTime();
+    var variables = new Dictionary<string, string>() {
+        { "Function", "Download Paycode Reply File" },
+        { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
+        { "TotalItem", string.Format("{0:N0}", result.ItemCount) }
+    };
+
+    string mailCode = string.Empty;
+    //string partyCode = repository.GetPartyCode(user);
+    string partyCode = user.Company;
+    if (partyCode == PartyCode.IDBL)
+    {
+        mailCode = MailCode.TELE_IDBL_FOLLOWUP;
+    }
+    else if (partyCode == PartyCode.TVD)
+    {
+        mailCode = MailCode.TELE_TVD_FOLLOWUP;
+    }
+
+    EMailFromDb email = new EMailFromDb();
+    try
+    {
+        email.Send(mailCode, variables);
+    }
+    catch (Exception ex)
+    {
+        throw new ApplicationException("ไม่สามารถส่ง E-mail ได้ : " + ex.Message);
+    }
+
+    return result;
+}
+```
+DownloadPaycodeReplyFile
+```c# 
+public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
+{
+    FileInfo result = null;
+    using (TeleEntities context = new TeleEntities())
+    {
+        DateTime now = GetCurrentDbDataTime();
+
+        var saleContent = context.IDL_SALE_CONTENT
+            .Where(x => x.CONTENT_ID == contentID)
+            .FirstOrDefault();
+
+        if (saleContent != null)
+        {
+            if (saleContent.CSO4_PAY_CODE_REPLY.FirstOrDefault().CSO4_PAY_CODE_REPLY_USED == null)
+            {
+                string paycodeReplyID = saleContent.CSO4_PAY_CODE_REPLY.FirstOrDefault().PAY_CODE_REPLY_ID;
+                CSO4_PAY_CODE_REPLY_USED used = new CSO4_PAY_CODE_REPLY_USED();
+                used.PAY_CODE_REPLY_ID = paycodeReplyID;
+                used.CREATED_ON = now;
+                used.CREATED_BY = user.Username;
+                context.CSO4_PAY_CODE_REPLY_USED.Add(used);
+                context.SaveChanges();
+
+                result = new FileInfo();
+                result.Filename = saleContent.FILE_NAME;
+                result.Content = saleContent.CONTENT;
+                result.ItemCount = saleContent.CSO4_PAY_CODE_REPLY.FirstOrDefault().CSO4_PAY_CODE_REPLY_ITEM.Count();
+                return result;
+            }
+            else
+            { 
+                throw new ApplicationException("ไฟล์ถูก Download ไปแล้ว");
+            }
+        }
+        else
+        {
+            throw new ApplicationException("ไม่พบไฟล์");
+        }
     }
 }
 ```
@@ -981,6 +1354,26 @@ public IHttpActionResult DownloadSaleLead(DownloadFileInfo downloadFileInfo)
         logger.Error("MethodName : " + MethodBase.GetCurrentMethod().Name + " ==> " + e);
         return InternalServerError(ex);
     }
+}
+```
+
+```c#
+ public FileInfo DownloadSaleLeadFile(UserInfo user, string contentID)
+{
+    ITeleRepository repository = new TeleRepository();
+    var result = repository.DownloadSaleLeadFile(user, contentID);
+    // send mail
+    DateTime now = repository.GetCurrentDateTime();
+    var variables = new Dictionary<string, string>() {
+        { "Function", "Donwload Sale Lead File" },
+        { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
+        { "TotalItem", string.Format("{0:N0}", result.ItemCount) }
+    };
+
+    EMailFromDb email = new EMailFromDb();
+    email.Send(MailCode.TELE_IDBL_FOLLOWUP, variables);
+
+    return result;
 }
 ```
 
