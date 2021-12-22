@@ -380,6 +380,12 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 
 <img width="956" alt="ApplicationInfo" src="https://user-images.githubusercontent.com/46476206/147037423-5bd37024-414e-4087-a8df-234014f68cc3.png">
 
+>  - บันทึกรายการ application info
+
+ > - สร้าง sms เพื่อรอส่ง
+
+ > - ทำการส่ง sms ทั้งหมดที่ยังไม่ได้ทำการส่งให้ลูกค้า"
+
 
 👨🏻‍💻 **การทำงานของ Code**
 
@@ -407,8 +413,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 
                 ITeleServiceAction action = new TeleServiceAction();
 
-                // 💡
-
+                💡// อัพโหลดข้อมูลขึ้น Database
                 action.UploadApplicationInfo(param);
                 return Ok();
             }
@@ -467,13 +472,15 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         }
         throw new ApplicationException("ไฟล์ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบไฟล์ : " + e);
     }
-
+    // Save ลง Table ** ตัวดึง PayCode จะอยู่ข้างใน 
     repository.UploadApplicationInfo(param, items);
 
+    // ส่ง SMS 
     #region Send SMS
     List<string> messages = new List<string>();
     List<IDL1_APP_INFO_SEND_SMS> appInfoSMSList = new List<IDL1_APP_INFO_SEND_SMS>();
 
+    // ไปดึงรายการ SMS ที่ยังไม่ถูกส่งมาทั้งหมด แล้วนำวนลูปเผื่อส่ง
     var csoLinkIdlFypList = repository.GetAllItemToSendSMS();
     foreach (var csoLinkIdlFyp in csoLinkIdlFypList)
     {
@@ -489,7 +496,8 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         messages.Add(msg);
     }
     #endregion
-
+    // ส่ง SMS ให้ให้ผู้ดูแลระบบ เพื่อเอาไว้ตรวจสอบ ว่า SMS ถูกส่งหรือเปล่า
+    // ไปดึงเบอร์ จาก Web config
     #region เพิ่มการส่ง SMS ให้ผู้ดูแลระบบ
     string sendMessage = "วันที่ " + now.ToString("dd/MM/yyyy HH:mm:ss") + " ทำการ Upload Application Info จำนวน " + messages.Count.ToString() + " รายการ";
     var smsReceivers = ConfigurationManager.AppSettings["SMSReceivers"];
@@ -508,14 +516,14 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
     }
     #endregion
 
-   💡 // Send SMS
+   💡 // Send SMS จากนั้น ส่ง SMS
     bool result = false;
     result = CallServiceSendSMS(messages);
     if (result)
     {
         repository.SaveAppInfoSendSMS(appInfoSMSList);
 
-        💡 // send mail
+        💡 // จากนั้น send mail
         var variables = new Dictionary<string, string>() {
             { "Function", "Upload Application Info File" },
             { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
@@ -560,7 +568,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
 {
     using (TeleEntities context = new TeleEntities())
     {
-        #region  Insert data to IDL1_App_Info_Item
+        #region  Insert data to IDL1_App_Info_Item 
         DateTime now = GetCurrentDbDataTime();
         string contentId = GetNewDbID();
         int seqNumber = 0;
@@ -573,7 +581,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         content.CONTENT = param.File.Content;
         content.CONTENT_FILE_TYPE = ContentFileType.ApplicationInfo;
         
-        💡 //นำข้อมูลที่ได้มาวนลูป เพื่อ Save ลง Databse
+        💡 //นำข้อมูลที่ได้มาวนลูป เพื่อ Save ลง Database
         foreach (var item in items)
         {
             seqNumber++;
@@ -637,7 +645,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         using (OracleConnection con = new OracleConnection(connectionString))
         {
             con.Open();
-            string command = "cso_idl_fyp.gen_idl_fyp_pay_item";
+            string command = "cso_idl_fyp.gen_idl_fyp_pay_item"; // Package
             OracleCommand cmd = new OracleCommand(command, con);
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.ExecuteNonQuery();
@@ -645,6 +653,7 @@ public IHttpActionResult UploadCancelCase(FileInfo fileInfo)
         #endregion
 
          // created paycode reply file
+         //รายการที่ทำการตอบกลับไปทาง I-Direct เพื่อให้ทาง I-Direct Download ไปติดตามลูกค้า
         SavePaycodeReply(partyCode, username);
     }
 }
@@ -686,7 +695,8 @@ public IHttpActionResult DownloadPolicyUpdate(DownloadFileInfo downloadFileInfo)
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
-        💡 //
+
+        💡 //ดาวโหลดข้อมูลที่ออกกรรมธรรม์แล้ว 
         var result = action.DownloadPolicyUpdateFile(user, downloadFileInfo.ContentId);
         return Ok(result);
     }
@@ -716,6 +726,93 @@ public IHttpActionResult DownloadPolicyUpdate(DownloadFileInfo downloadFileInfo)
     }
 }
 ```
+**DownloadPolicyUpdateFile**
+
+```c# 
+ public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
+{
+    ITeleRepository repository = new TeleRepository();
+    var result =  repository.DownloadPolicyUpdateFile(user, contentID);
+
+    // send mail
+    DateTime now = repository.GetCurrentDateTime();
+    var variables = new Dictionary<string, string>() {
+        { "Function", "Donwload Policy Update File" },
+        { "RunDateTime", now.ToLongDateString() + ' ' + now.ToLongTimeString() },
+        { "TotalItem", string.Format("{0:N0}", result.ItemCount) }
+    };
+    //ส่ง Email
+    string mailCode = string.Empty;
+    //string partyCode = repository.GetPartyCode(user);
+    string partyCode = user.Company;
+    if (partyCode == PartyCode.IDBL)
+    {
+        mailCode = MailCode.TELE_IDBL;
+    }
+    else if (partyCode == PartyCode.TVD)
+    {
+        mailCode = MailCode.TELE_TVD;
+    }
+
+    EMailFromDb email = new EMailFromDb();
+    try
+    {
+        email.Send(mailCode, variables);
+    }
+    catch (Exception ex)
+    {
+        throw new ApplicationException("ไม่สามารถส่ง E-mail ได้ : " + ex.Message);
+    }
+
+    return result;
+}
+```
+
+**DownloadPolicyUpdateFile**
+
+
+```c#
+ public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
+{
+    FileInfo result = null;
+    using (TeleEntities context = new TeleEntities())
+    {
+        DateTime now = GetCurrentDbDataTime();
+       
+        var saleContent = context.IDL_SALE_CONTENT
+            .Where(x => x.CONTENT_ID == contentID)
+            .FirstOrDefault();
+
+        if (saleContent != null)
+        {
+            //ไป Mark ว่าดาวโหลดแล้ว
+            if (saleContent.IDL_POLICY_UPDATE_SENT.FirstOrDefault().IDL_POL_UPD_SENT_USED == null)
+            {
+                IDL_POL_UPD_SENT_USED used = new IDL_POL_UPD_SENT_USED();
+                used.POLICY_UPDATE_SENT_ID = saleContent.IDL_POLICY_UPDATE_SENT.FirstOrDefault().POLICY_UPDATE_SENT_ID;
+                used.CREATED_ON = now;
+                used.CREATED_BY = user.Username;
+                context.IDL_POL_UPD_SENT_USED.Add(used);
+                context.SaveChanges();
+                //
+                result = new FileInfo();
+                result.Filename = saleContent.FILE_NAME;
+                result.Content = saleContent.CONTENT;
+                result.ItemCount = saleContent.IDL_POLICY_UPDATE_SENT.FirstOrDefault().IDL_POL_UPDATE_SENT_ITEM.Count();
+                return result;
+            }
+            else
+            {
+                throw new ApplicationException("ไฟล์ถูก Download ไปแล้ว");
+            }
+        }
+        else
+        {
+            throw new ApplicationException("ไม่พบไฟล์");
+        }
+    }
+}
+```
 ### 🎬 **Policy Cancel** 
 🔎 เพื่อ BLA จัดส่งรายการยกเลิกกธ. ให้ IDB update Policy status
 
@@ -739,7 +836,7 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
-        💡 //
+        💡 //ไปดาวโหลดข้อมูลที่ลูกค้าขอยกเลิก และพี่ยอยยกเลิกแล้ว 
         var result = action.DownloadPolicyCancelFile(user, downloadFileInfo.ContentId);
         return Ok(result);
     }
@@ -785,6 +882,7 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
             .Where(x => x.CONTENT_ID == contentID)
             .FirstOrDefault();
 
+        // ไป mark ว่า Download แล้ว 
         if (saleContent != null)
         {
             if (saleContent.IDL_POLICY_UPDATE_SENT.FirstOrDefault().IDL_POL_UPD_SENT_USED == null)
@@ -815,8 +913,8 @@ public IHttpActionResult DownloadPolicyCancel(DownloadFileInfo downloadFileInfo)
 }
 ```
 
-**DownloadPolicyUpdateFile Method**
-
+**DownloadPolicyUpdateFile**
+//////////////////////////////////////
 ``` c#
 public FileInfo DownloadPolicyUpdateFile(UserInfo user, string contentID)
 {
@@ -879,7 +977,8 @@ public IHttpActionResult DownloadPaymentConfirmation(DownloadFileInfo downloadFi
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
-        //💡
+
+        💡//ดาวโหลดรายการที่ลูกค้าชำระผ่าน Counter service มาแล้ว 
         var result = action.DownloadPaymentConfirmationFile(user, downloadFileInfo.ContentId);                
         return Ok(result);
     }
@@ -963,7 +1062,7 @@ public FileInfo DownloadPaymentConfirmationFile(UserInfo user, string contentID)
         var saleContent = context.IDL_SALE_CONTENT
             .Where(x => x.CONTENT_ID == contentID)
             .FirstOrDefault();
-
+        // ไป mark ว่า ดาวโหลดข้อมูลแล้ว
         if (saleContent != null)
         {
             if(saleContent.IDL1_PAY_CONFIRM_SENT.FirstOrDefault().IDL1_PAY_CONFIRM_SENT_USED == null)
@@ -1018,7 +1117,7 @@ public IHttpActionResult DownloadPaycodeFollowUp(PaycodeFollowupParam paycodeFol
             throw new UnauthorizedAccessException("Invalid Company");
         }
         IFollowUpAction action = new FollowUpAction();
-        💡 //
+        💡 //ดึงรายการที่ลูกค้ายังไม่ได้ชำระ เฉพาะ Counter service
         var results = action.CreatedNewPaycodeFollowUp(user, paycodeFollowDate);
         if(results == null)
         {
@@ -1069,13 +1168,14 @@ public FileInfo CreatedNewPaycodeFollowUp(UserInfo userInfo, PaycodeFollowupPara
     IFollowUpRepository repository = new FollowUpRepository();
 
     💡//โหลดรายการที่ต้องติดตามเบี้ย
+    //ผ่านการจ่ายงวดแรกมาแล้ว ต้องไปบันทึกที่ CSO2_Pay_Item_Cancel
     var listPremFollowUp = repository.LoadCSOPremFollwUp(followUpDate.BeginDate, followUpDate.EndDate, partyCode);
     if (listPremFollowUp.Count > 0)
     {
         List<string> policyNbrs = listPremFollowUp.Select(s => s.POLICY_NUMBER).Distinct().ToList();
         💡 //หาข้อมูลกรมธรรม์
         List<TRNPCsRnDue> CsoNextDueTxns = repository.GetCsoNextDue(policyNbrs);
-
+        // set header 
         List<TRNPFollowUpLayout> trnpFollowUp = new List<TRNPFollowUpLayout>();
         #region Header
         TRNPFollowUpLayout headerFollowUp = new TRNPFollowUpLayout();
@@ -1198,7 +1298,7 @@ public IHttpActionResult DownloadPaycodeReply(DownloadFileInfo downloadFileInfo)
             throw new UnauthorizedAccessException("Invalid Company");
         }
         ITeleServiceAction action = new TeleServiceAction();
-        💡 //
+        💡 // ดาวโหลดข้อมูลลูกค้าที่ยังไม่ได้ชำระ เพื่อให้ Idirect ไปติดตาม (เฉพาะ Counter Service)
         var result = action.DownloadPaycodeReplyFile(user, downloadFileInfo.ContentId);
         return Ok(result);
     }
@@ -1235,6 +1335,7 @@ public IHttpActionResult DownloadPaycodeReply(DownloadFileInfo downloadFileInfo)
 public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
 {
     ITeleRepository repository = new TeleRepository();
+    //ไป ดาวโหลดข้อมูลลูกค้าที่ยังไม่ได้ชำระ (เฉพาะ Counter Service)
     var result =  repository.DownloadPaycodeReplyFile(user, contentID);
 
     💡 // send mail
@@ -1281,10 +1382,13 @@ public FileInfo DownloadPaycodeReplyFile(UserInfo user, string contentID)
     {
         DateTime now = GetCurrentDbDataTime();
         💡
+
+        //ไป ดาวโหลดข้อมูลลูกค้าที่ยังไม่ได้ชำระ (เฉพาะ Counter Service)
         var saleContent = context.IDL_SALE_CONTENT
             .Where(x => x.CONTENT_ID == contentID)
             .FirstOrDefault();
 
+        //ไป mark ว่า ดาวโหลดข้อมูลแล้ว
         if (saleContent != null)
         {
             if (saleContent.CSO4_PAY_CODE_REPLY.FirstOrDefault().CSO4_PAY_CODE_REPLY_USED == null)
@@ -1346,6 +1450,8 @@ public IHttpActionResult DownloadRecurringFollowUp()
         using (HttpClient client = new HttpClient())
         {
             HttpResponseMessage response = client.GetAsync(recurringFollowUpUrl + "LoadFollowUpReport/" + partyCode).Result;
+            //ทำการลิ้ง อีกที่หนึ่ง
+            //<add key="RecurringFollowUpUrl" value="http://172.16.10.138/ISIS.EDCRecurringPaymentSFTP/TeleMarketingAPI.SFTP/RecuerFollowUpReportAPI/" />    
             FileData resultFile = response.Content.ReadAsAsync<FileData>().Result;
             if (resultFile == null)
             {
@@ -1413,7 +1519,7 @@ public IHttpActionResult DownloadSaleLead(DownloadFileInfo downloadFileInfo)
         }
         ITeleServiceAction action = new TeleServiceAction();
 
-        //💡
+        💡//ไปดาวโหลด Lead เพื่อให้ทาง I- Direct ไปโทรหาลูกค้า  ☠️ 
         var result = action.DownloadSaleLeadFile(user, downloadFileInfo.ContentId);
         return Ok(result);
     }
@@ -1450,6 +1556,7 @@ public IHttpActionResult DownloadSaleLead(DownloadFileInfo downloadFileInfo)
  public FileInfo DownloadSaleLeadFile(UserInfo user, string contentID)
 {
     ITeleRepository repository = new TeleRepository();
+    //ไปดาวโหลดข้อมูล
     var result = repository.DownloadSaleLeadFile(user, contentID);
     💡 // send mail
     DateTime now = repository.GetCurrentDateTime();
@@ -1466,3 +1573,46 @@ public IHttpActionResult DownloadSaleLead(DownloadFileInfo downloadFileInfo)
 }
 ```
 
+```c#
+ public FileInfo DownloadSaleLeadFile(UserInfo user, string contentID)
+        {
+            FileInfo result = null;
+            using (TeleEntities context = new TeleEntities())
+            {
+                DateTime now = GetCurrentDbDataTime();
+                //Query 
+                var saleContent = context.IDL_SALE_CONTENT
+                    .Where(x => x.CONTENT_ID == contentID)
+                    .FirstOrDefault();
+
+                // Mark ว่าดาวโหลดแล้ว
+                if (saleContent != null)
+                {
+                    if (saleContent.OMLG_SALE_LEAD.FirstOrDefault().OMLG_SALE_LEAD_USED == null)
+                    {
+                        string saleLeadID = saleContent.OMLG_SALE_LEAD.FirstOrDefault().SALE_LEAD_ID;
+                        OMLG_SALE_LEAD_USED used = new OMLG_SALE_LEAD_USED();
+                        used.SALE_LEAD_ID = saleLeadID;
+                        used.CREATED_ON = now;
+                        used.CREATED_BY = user.Username;
+                        context.OMLG_SALE_LEAD_USED.Add(used);
+                        context.SaveChanges();
+
+                        result = new FileInfo();
+                        result.Filename = saleContent.FILE_NAME;
+                        result.Content = saleContent.CONTENT;
+                        result.ItemCount = saleContent.OMLG_SALE_LEAD.FirstOrDefault().OMLG_IDBL_CALL_LIST.Count();
+                        return result;
+                    }
+                    else
+                    {
+                        throw new ApplicationException("ไฟล์ถูก Download ไปแล้ว");
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException("ไม่พบไฟล์");
+                }
+            }
+        }
+```
